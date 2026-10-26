@@ -13,14 +13,14 @@ export const SPAWN = { position: [0, 0, 70], heading: 0 }
 
 // Neon rings to fly through (a loose tour of every planet)
 export const GATES = [
-  [0, 0, 15],
-  [-95, 6, -115],
-  [-170, 12, -300],
-  [-20, 10, -480],
-  [80, 18, -540],
-  [215, 8, -330],
-  [110, 0, -70],
-  [45, -2, 0],
+  [-30, 0, 0],
+  [-290, 10, -190],
+  [-380, 15, -560],
+  [40, 18, -860],
+  [380, 10, -560],
+  [270, 0, -130],
+  [90, 0, 20],
+  [-20, 8, -430],
 ]
 
 const projects = [
@@ -78,7 +78,7 @@ export const sections = [
     label: 'ABOUT',
     subtitle: 'Who I am',
     accent: '#b794ff',
-    planet: { position: [-45, 0, -40], radius: 20, colors: ['#3b1d8f', '#8b5cf6', '#f0abfc'], style: 'bands', seed: 1, ring: true },
+    planet: { position: [-110, 0, -90], radius: 20, colors: ['#3b1d8f', '#8b5cf6', '#f0abfc'], style: 'bands', seed: 1, ring: true },
     html: `
       <p class="kicker">Planet 01 · About</p>
       <h2>Hi, I'm Aakansha 👋</h2>
@@ -100,7 +100,7 @@ export const sections = [
     label: 'EXPERIENCE',
     subtitle: '3+ years',
     accent: '#5eead4',
-    planet: { position: [-200, 15, -200], radius: 26, colors: ['#0b3b4a', '#14b8a6', '#a7f3d0'], style: 'rocky', seed: 2 },
+    planet: { position: [-460, 20, -300], radius: 26, colors: ['#0b3b4a', '#14b8a6', '#a7f3d0'], style: 'rocky', seed: 2 },
     moons: ['Webforest', 'Systaldyn'],
     html: `
       <p class="kicker">Planet 02 · Experience</p>
@@ -135,7 +135,7 @@ export const sections = [
     label: 'PROJECTS',
     subtitle: '6 missions',
     accent: '#fbbf24',
-    planet: { position: [190, -10, -180], radius: 30, colors: ['#5b1a0e', '#f97316', '#fde68a'], style: 'bands', seed: 3, ring: true },
+    planet: { position: [-200, 10, -760], radius: 30, colors: ['#5b1a0e', '#f97316', '#fde68a'], style: 'bands', seed: 3, ring: true },
     moons: projects.map((p) => p.name),
     html: `
       <p class="kicker">Planet 03 · Projects</p>
@@ -159,7 +159,7 @@ export const sections = [
     label: 'SKILLS',
     subtitle: 'Tech constellation',
     accent: '#60a5fa',
-    planet: { position: [-110, 5, -420], radius: 24, colors: ['#0c1e5b', '#3b82f6', '#c7d2fe'], style: 'rocky', seed: 4 },
+    planet: { position: [260, 25, -780], radius: 24, colors: ['#0c1e5b', '#3b82f6', '#c7d2fe'], style: 'rocky', seed: 4 },
     tags: ['React', 'Three.js', 'R3F', 'WebGL', 'WebGPU', 'TypeScript', 'Redux', 'Tailwind', 'Node.js', 'WebSockets', 'D3.js', 'OpenUSD'],
     html: `
       <p class="kicker">Planet 04 · Skills</p>
@@ -173,7 +173,7 @@ export const sections = [
     label: 'CONTACT',
     subtitle: 'Send a signal',
     accent: '#f472b6',
-    planet: { position: [150, 20, -440], radius: 18, colors: ['#4a0d2e', '#ec4899', '#fbcfe8'], style: 'rocky', seed: 5 },
+    planet: { position: [430, -10, -300], radius: 18, colors: ['#4a0d2e', '#ec4899', '#fbcfe8'], style: 'rocky', seed: 5 },
     station: true,
     html: `
       <p class="kicker">Planet 05 · Contact</p>

@@ -18,6 +18,7 @@ export function createUI() {
       const btn = $('launch')
       $('loader').classList.add('ready')
       btn.disabled = false
+      $('tour').disabled = false
       btn.textContent = 'LAUNCH'
       btn.focus()
       btn.addEventListener('click', () => {

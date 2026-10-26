@@ -19,7 +19,11 @@
         <h1>AAKANSHA KANSAL</h1>
         <p class="loader-role">Frontend Developer · React.js &amp; Three.js Engineer</p>
         <div class="bar"><span id="loader-bar"></span></div>
-        <button id="launch" disabled>Loading…</button>
+        <div class="loader-actions">
+          <button id="launch" disabled>Loading…</button>
+          <button id="tour" class="secondary" disabled>Guided tour</button>
+        </div>
+        <p class="loader-note">Not into games? Take the guided tour and the plane flies itself from planet to planet.</p>
         <div class="loader-keys">
           <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> fly</span>
           <span><kbd>Space</kbd>/<kbd>Q</kbd> up / down</span>
@@ -76,6 +80,8 @@
         </ul>
         <p>Tip: click any planet to jump straight to its section.</p>
       </div>
+
+      <nav id="dock" aria-label="Planets"></nav>
 
       <div id="toast"></div>
     </div>

@@ -109,7 +109,7 @@ export function createAsteroids(scene, { planets, avoid = [], count = 110, bound
         b.velocity.set(0, 0, 0)
       })
     },
-    update(dt, plane, onHit) {
+    update(dt, plane, onHit, ghost = false) {
       const planePos = plane.root.position
       planeVelocity.copy(plane.state.velocity)
       let strongest = 0
@@ -120,7 +120,7 @@ export function createAsteroids(scene, { planets, avoid = [], count = 110, bound
         const pos = b.mesh.position
 
         // Plane vs body
-        const hit = collide(plane.radius, b.radius, planePos, pos, planeVelocity, b.velocity, PLANE_MASS, b.mass, 0.6)
+        const hit = ghost ? 0 : collide(plane.radius, b.radius, planePos, pos, planeVelocity, b.velocity, PLANE_MASS, b.mass, 0.6)
         if (hit > 0) {
           b.spin.x += (Math.random() - 0.5) * hit * 0.08
           b.spin.y += (Math.random() - 0.5) * hit * 0.08

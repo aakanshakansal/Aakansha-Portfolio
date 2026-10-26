@@ -45,7 +45,7 @@ export function createName(scene, physics, { text, subtitle, position, size = 5 
     const color = gradientAt(index++ / Math.max(visible - 1, 1))
     const mesh = new THREE.Mesh(
       geometry,
-      new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.35, emissive: color, emissiveIntensity: 0.18 })
+      new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.2, emissive: color, emissiveIntensity: 0.06 })
     )
     mesh.position.x = cursor + width / 2
     glyphs.push(mesh)

@@ -22,11 +22,11 @@ import { createMarkers } from './markers.js'
 import { createAchievements } from './achievements.js'
 
 const WORLD = {
-  min: new THREE.Vector3(-290, -45, -600),
-  max: new THREE.Vector3(290, 55, 130),
+  min: new THREE.Vector3(-540, -45, -920),
+  max: new THREE.Vector3(520, 60, 140),
 }
 const NAME_POSITION = new THREE.Vector3(0, 10, 22)
-const SECRET_POSITION = new THREE.Vector3(230, 48, 115)
+const SECRET_POSITION = new THREE.Vector3(420, 50, 110)
 
 const ui = createUI()
 const input = createInput()
@@ -93,6 +93,7 @@ const spawnPoint = new THREE.Vector3(...SPAWN.position)
 const physics = createAsteroids(scene, {
   planets,
   bounds: WORLD,
+  count: 200,
   avoid: [[spawnPoint, 45], [NAME_POSITION, 50], [SECRET_POSITION, 15], ...gates.gates.map((g) => [g.center, 16])],
 })
 createName(scene, physics, {
@@ -109,8 +110,15 @@ ui.setProgress(1)
 // ---------- Sections ----------
 const explored = new Set()
 function openSection(section) {
-  ui.openPanel(section)
-  if (!sections.includes(section)) return
+  const i = sections.indexOf(section)
+  const prev = sections[i - 1]
+  const next = sections[i + 1]
+  // Prev / next buttons let anyone tour the portfolio without flying
+  const nav = `<div class="panel-nav">
+    ${prev ? `<button data-go="${i - 1}">← ${prev.label}</button>` : ''}
+    ${next ? `<button class="primary" data-go="${i + 1}">Next: ${next.label} →</button>` : `<button class="primary" data-go="0">Back to ${sections[0].label} ↺</button>`}
+  </div>`
+  ui.openPanel(section, section.html + nav)
   explored.add(section.id)
   achievements.unlock('first-planet')
   if (explored.size === sections.length) achievements.unlock('all-planets')
@@ -118,8 +126,74 @@ function openSection(section) {
 function openAchievements() {
   ui.openPanel({ label: 'ACHIEVEMENTS', accent: '#ffd166' }, achievements.html())
 }
+function openResume() {
+  const all = sections.map((s) => s.html).join('<div class="section-divider"></div>')
+  ui.openPanel({ label: 'RÉSUMÉ', accent: '#b794ff' }, all)
+}
+
+// ---------- Autopilot: fly to a planet by itself, then open its section ----------
+let autopilot = null
+const steer = new THREE.Vector3()
+const away = new THREE.Vector3()
+
+function flyTo(planet) {
+  ui.closePanel()
+  if (plane.root.position.distanceTo(planet.position) < planet.radius + 45) {
+    openSection(planet.section)
+    return
+  }
+  autopilot = { planet }
+  ui.toast(`Autopilot engaged → ${planet.section.label}  (any flight key takes over)`, 2600)
+}
+
+function autopilotControls() {
+  const pos = plane.root.position
+  const { planet } = autopilot
+  steer.subVectors(planet.position, pos)
+  const dist = steer.length()
+  if (dist < planet.radius + 40) {
+    autopilot = null
+    openSection(planet.section)
+    return null
+  }
+  steer.divideScalar(dist)
+  // Swerve around any other planet in the way
+  for (const p of planets) {
+    if (p === planet) continue
+    away.subVectors(pos, p.position)
+    const d = away.length()
+    const safe = p.radius * 2 + 40
+    if (d < safe) steer.addScaledVector(away.divideScalar(d), ((safe - d) / safe) * 3)
+  }
+  const desiredHeading = Math.atan2(-steer.x, -steer.z)
+  let diff = desiredHeading - plane.state.heading
+  diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+  const clamp1 = (v) => THREE.MathUtils.clamp(v, -1, 1)
+  return {
+    throttle: Math.abs(diff) > 1.2 ? 0.35 : dist < 140 ? 0.6 : 1,
+    turn: clamp1(diff * 2.5),
+    lift: clamp1((planet.position.y - pos.y) / 12),
+    boost: dist > 180 && Math.abs(diff) < 0.35,
+    brake: false,
+  }
+}
+
+// ---------- Planet dock ----------
+const dock = document.getElementById('dock')
+dock.innerHTML =
+  sections.map((s, i) => `<button data-planet="${i}" style="--c:${s.accent}"><i></i>${s.label}</button>`).join('') +
+  `<span class="divider"></span><button data-resume style="--c:#e9e4ff">📄 RÉSUMÉ</button>`
+const dockButtons = [...dock.querySelectorAll('[data-planet]')]
+dock.addEventListener('click', (e) => {
+  const btn = e.target.closest('button')
+  if (!btn) return
+  if (btn.hasAttribute('data-resume')) openResume()
+  else flyTo(planets[Number(btn.dataset.planet)])
+})
 
 document.getElementById('panel-body').addEventListener('click', (e) => {
+  const go = e.target.closest('[data-go]')
+  if (go) flyTo(planets[Number(go.dataset.go)])
   const link = e.target.closest('a[href]')
   if (link && /^(mailto:|https?:)/.test(link.getAttribute('href'))) achievements.unlock('contact')
   if (e.target.id === 'reset-achievements') {
@@ -166,7 +240,7 @@ window.addEventListener('pointermove', (e) => {
 window.addEventListener('pointerup', (e) => {
   if (dragging && dragDistance < 6 && started) {
     const section = planetUnder(e)
-    if (section) openSection(section)
+    if (section) flyTo(planets.find((p) => p.section === section))
   }
   dragging = null
 })
@@ -181,7 +255,8 @@ function updateCamera(dt, time) {
     // Cinematic sweep in front of the name while the loader is up
     const a = Math.sin(time * 0.12) * 0.8
     tmp.set(NAME_POSITION.x, NAME_POSITION.y - 2, NAME_POSITION.z + 8)
-    desired.set(tmp.x + Math.sin(a) * 62, tmp.y + 6 + Math.sin(time * 0.2) * 4, tmp.z + Math.cos(a) * 62)
+    const r = camera.aspect < 1 ? 72 / camera.aspect : 62 // pull back on portrait screens so the full name fits
+    desired.set(tmp.x + Math.sin(a) * r, tmp.y + 6 + Math.sin(time * 0.2) * 4, tmp.z + Math.cos(a) * r)
     camera.position.lerp(desired, 1 - Math.exp(-dt * 1.5))
     lookTarget.lerp(tmp, 1 - Math.exp(-dt * 2))
     camera.lookAt(lookTarget)
@@ -228,6 +303,7 @@ let rockHits = 0
 const announced = new Set()
 
 function respawn() {
+  autopilot = null
   plane.reset(SPAWN.position, SPAWN.heading)
   ui.toast('Back at the launch pad 🚀')
 }
@@ -257,15 +333,19 @@ document.getElementById('btn-trophy').addEventListener('click', openAchievements
 ui.ready(() => {
   started = true
   audio.start()
-  ui.toast('Fly to a planet and press Enter to explore ✨', 4000)
+  if (!autopilot) ui.toast('Fly with WASD — or pick a planet below and autopilot takes you there ✨', 4500)
   setTimeout(() => achievements.unlock('launch'), 1800)
+})
+
+document.getElementById('tour').addEventListener('click', () => {
+  document.getElementById('launch').click()
+  flyTo(planets[0])
 })
 
 document.getElementById('skip-link').addEventListener('click', (e) => {
   e.preventDefault()
   document.getElementById('launch').click()
-  const all = sections.map((s) => s.html).join('<div class="section-divider"></div>')
-  ui.openPanel({ label: 'RÉSUMÉ', accent: '#b794ff' }, all)
+  openResume()
 })
 
 // ---------- Loop ----------
@@ -278,7 +358,16 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 1 / 20)
   const time = clock.elapsedTime
 
-  const controls = input.read(started && !ui.isPanelOpen)
+  let controls = input.read(started && !ui.isPanelOpen)
+  if (autopilot) {
+    const manual = !ui.isPanelOpen && (controls.throttle || controls.turn || controls.lift)
+    if (manual) {
+      autopilot = null
+      ui.toast('Manual control — you have the stick 🕹️', 1800)
+    } else {
+      controls = autopilotControls() ?? controls
+    }
+  }
   plane.update(dt, controls, time)
 
   // Keep the plane outside planets and inside the play area
@@ -302,12 +391,13 @@ function frame() {
     plane.state.bump.addScaledVector(push, dt * 40)
   }
 
+  const ghost = !!autopilot
   physics.update(dt, plane, (strength, body) => {
     cam.shake = Math.min(1.2, strength * 0.04)
     audio.bump(strength)
     if (body.kind === 'letter') achievements.unlock('name')
     else if (strength > 2 && ++rockHits >= 15) achievements.unlock('smash')
-  })
+  }, ghost)
 
   gates.update(dt, time, pos, () => {
     audio.chime()
@@ -338,9 +428,11 @@ function frame() {
       nearest = p
     }
   }
+  const activeSection = autopilot?.planet.section ?? nearest?.section
+  dockButtons.forEach((b, i) => b.classList.toggle('active', sections[i] === activeSection))
   if (started) {
-    ui.showPrompt(nearest?.section ?? null)
-    if (nearest && !announced.has(nearest.section.id)) {
+    ui.showPrompt(autopilot ? null : nearest?.section ?? null)
+    if (nearest && !autopilot && !ui.isPanelOpen && !announced.has(nearest.section.id)) {
       announced.add(nearest.section.id)
       ui.toast(`Approaching ${nearest.section.label} — press Enter`, 2200)
     }
